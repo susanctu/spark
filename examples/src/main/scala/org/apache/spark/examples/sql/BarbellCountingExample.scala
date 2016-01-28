@@ -21,16 +21,18 @@ object BarbellCountingExample {
       """select count(*)
         | from graph as t1, graph as t2, graph as t3, graph as t4, graph as t5, graph as t6, graph as t7
         | where
-        | t1.dst = t2.src
+        | t1.src = t2.src
+        | and t1.dst = t3.src
         | and t2.dst = t3.dst
-        | and t1.src = t3.src
-        | and t4.dst = t5.src
+        | and t4.src = t5.src
+        | and t4.dst = t6.src
         | and t5.dst = t6.dst
-        | and t4.src = t6.src
-        | and t1.src = t4.src""".stripMargin
+        | and t7.src = t1.src
+        | and t7.dst = t4.src""".stripMargin
 
     val b = new Benchmarker
     val res = sqlContext.sql(triangle)
-    b.time { res.collect() }
+    val count = b.time { res.collect() }
+    println(count(0))
   }
 }

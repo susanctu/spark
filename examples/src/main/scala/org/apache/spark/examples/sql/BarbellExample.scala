@@ -1,5 +1,6 @@
 package org.apache.spark.examples.sql
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkContext, SparkConf}
 
@@ -8,6 +9,7 @@ import org.apache.spark.{SparkContext, SparkConf}
  */
 object BarbellExample {
   def  main(args: Array[String]) {
+    Logger.getRootLogger.setLevel(Level.FATAL);
     val conf = new SparkConf().setAppName("BarbellGHDExample")
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
@@ -16,10 +18,11 @@ object BarbellExample {
       val parts = line.split(" ")
       Edge(parts(0).toInt, parts(1).toInt)
     })
+
     val df = sqlContext.createDataFrame(edges)
     val data:List[(Int, Int)] = edges.collect().map(e => (e.src, e.dst)).toList
 
-    val bag1 = df.select("src").map(a => {
+    val bag1 = df.select("src").distinct.map(a => {
       val count = data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).map(b => {
         val c = data.filter(x_val => x_val._1 == b).unzip._2.toSet.intersect(data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet)
         c.size
@@ -28,7 +31,7 @@ object BarbellExample {
     })
 
     // kind of redundant, but perhaps a more fair comparison
-    val bag2 = df.select("src").map(a => {
+    val bag2 = df.select("src").distinct.map(a => {
       val count = data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).map(b => {
         val c = data.filter(x_val => x_val._1 == b).unzip._2.toSet.intersect(data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet)
         c.size
@@ -43,14 +46,20 @@ object BarbellExample {
     val bag2df = bmark.time { sqlContext.createDataFrame(bag2) }
     val bag2collected = bmark.time { bag2.collect }
     val bag2r2a = bmark.time { bag2collected.toMap}
-    val topBag = df.select("src").intersect(bag1df.select("_1")).intersect(bag2df.select("_1")).map(a => {
-      data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.intersect(bag1collected.filter(row => row._1 == a.getInt(0)).unzip._2).map(b_val => {
+
+    bag1collected.foreach(println)
+    bag2collected.foreach(println)
+    println(bag1r2a)
+    println(bag2r2a)
+
+    val topBag = df.select("src").intersect(bag1df.select("_1")).map(a => {
+      data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.intersect(bag2collected.unzip._1).map(b_val => {
         bag1r2a.get(a.getInt(0)).get * bag2r2a.get(b_val).get
       }).sum
-    }).sum
+    })
 
     bmark.time {
-      println(topBag)
+      println(topBag.sum)
     }
 
     bmark.printTotalElapsed()
