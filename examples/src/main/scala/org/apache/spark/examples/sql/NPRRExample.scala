@@ -20,7 +20,7 @@ object NPRRExample {
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
 
-    val edges = sc.textFile("examples/src/main/resources/facebook.txt").map(line => {
+    val edges = sc.textFile(args(0)).map(line => {
       val parts = line.split(" ")
       Edge(parts(0).toInt, parts(1).toInt)
     })
@@ -28,14 +28,14 @@ object NPRRExample {
     val data:List[(Int, Int)] = edges.collect().map(e => (e.src, e.dst)).toList
 
     val result = df.select("src").map(a => {
-      data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).flatMap(b => {
+      data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).map(b => {
         val c = data.filter(x_val => x_val._1 == b).unzip._2.toSet.intersect(data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet)
-        c.map(c_val => s"""${a.getInt(0)},${b},${c_val}""")
-      })
+        c.size
+      }).sum
     })
 
     time {
-      result.collect()
+      result.sum
     }
   }
 }

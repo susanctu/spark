@@ -12,7 +12,7 @@ object BarbellExample {
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
 
-    val edges = sc.textFile("examples/src/main/resources/facebook.txt").map(line => {
+    val edges = sc.textFile(args(0)).map(line => {
       val parts = line.split(" ")
       Edge(parts(0).toInt, parts(1).toInt)
     })
