@@ -148,4 +148,9 @@ public class JavaCustomReceiver extends Receiver<String> {
       restart("Error receiving data", t);
     }
   }
+
+  @Override
+  public StorageLevel storageLevel() {
+    return null;
+  }
 }
