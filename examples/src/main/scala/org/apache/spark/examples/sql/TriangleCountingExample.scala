@@ -25,7 +25,7 @@ object TriangleCountingExample {
     val graph = sqlContext.createDataFrame(edges)
     graph.registerTempTable("graph")
     val triangle =
-      """select t1.src, t1.dst, t2.dst
+      """select count(*)
         | from graph as t1, graph as t2, graph as t3
         | where
         | t1.src = t2.src
@@ -34,6 +34,6 @@ object TriangleCountingExample {
 
     val res = sqlContext.sql(triangle)
     val count = time { res.collect() }
-    count.foreach(row => println(row))
+    println(count(0))
   }
 }

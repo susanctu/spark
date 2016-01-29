@@ -28,21 +28,16 @@ object NPRRExample {
     val data:List[(Int, Int)] = edges.collect().map(e => (e.src, e.dst)).toList
 
     val result = df.select("src").distinct.map(a => {
-      data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).map(b => {
+      data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).toList.map(b => {
         val c = data.filter(x_val => x_val._1 == b).unzip._2.toSet.intersect(data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet)
         c.size
-      }).sum
+      }).foldLeft(0)(_ + _)
     })
 
-    /*val noSparkResult = data.unzip._1.distinct.map(a => {
-      data.filter(x_val => x_val._1 == a).unzip._2.toSet.intersect(data.unzip._1.toSet).map(b => {
-        val c = data.filter(x_val => x_val._1 == b).unzip._2.toSet.intersect(data.filter(x_val => x_val._1 == a).unzip._2.toSet)
-        c.map(c_val => s"""${a} ${b} ${c_val}""")
-      }).flatten
-    })*/
-
+    val accum = sc.accumulator(0, "My Accumulator")
     val count = time {
-      println(result.sum)
+      result.foreach(c => accum += c)
+      println(accum.value)
     }
   }
 }
