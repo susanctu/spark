@@ -25,11 +25,11 @@ object NPRRExample {
       Edge(parts(0).toInt, parts(1).toInt)
     })
     val df = sqlContext.createDataFrame(edges)
-    val data:List[(Int, Int)] = edges.collect().map(e => (e.src, e.dst)).toList
+    val data = sc.broadcast(edges.collect().map(e => (e.src, e.dst)).toList)
 
     val result = df.select("src").distinct.map(a => {
-      data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).toList.map(b => {
-        val c = data.filter(x_val => x_val._1 == b).unzip._2.toSet.intersect(data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet)
+      data.value.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.value.unzip._1.toSet).toList.map(b => {
+        val c = data.value.filter(x_val => x_val._1 == b).unzip._2.toSet.intersect(data.value.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet)
         c.size
       }).foldLeft(0)(_ + _)
     })
