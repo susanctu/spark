@@ -3,9 +3,6 @@ package org.apache.spark.examples.sql
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 
-/**
- * Created by sctu on 1/25/16.
- */
 object NPRRExample {
   def time[R](block: => R): R = {
     val t0 = System.nanoTime()
