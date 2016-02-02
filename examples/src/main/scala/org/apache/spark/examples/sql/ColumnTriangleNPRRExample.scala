@@ -17,14 +17,12 @@ object ColumnTriangleNPRRExample {
       Edge(parts(0).toInt, parts(1).toInt)
     })
     val df = sqlContext.createDataFrame(edges)
-    val R = Relation.fromFile(args(0))
-    val S = R.copy()
-    val T = R.copy()
+    val broadcastR = sc.broadcast(Relation.fromFile(args(0)))
 
     val result = df.select("src").distinct.map(wrappedA => {
       val a = wrappedA.getInt(0)
-      R.firstCol.getNextCol(a).intersect(S.firstCol).map(b => {
-        S.firstCol.getNextCol(b).intersect(T.firstCol.getNextCol(a)).size
+      broadcastR.value.firstCol.getNextCol(a).intersect(broadcastR.value.firstCol).map(b => {
+        broadcastR.value.firstCol.getNextCol(b).intersect(broadcastR.value.firstCol.getNextCol(a)).size
       }).sum
     })
 

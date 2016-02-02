@@ -5,10 +5,12 @@ import scala.io.Source
 
 object Relation {
   def fromFile(filename:String): Relation = {
+    //println("start of fromFile")
     var arr:Array[ArrayBuffer[Int]] = null
     val handle = Source.fromFile(filename)
     assert(handle != null)
-    for(line <- handle.getLines) {
+    for (line <- handle.getLines) {
+      //println(line)
       val parts = line.split("\\s+")
       if (arr == null) {
         arr = new Array[ArrayBuffer[Int]](parts.size)
@@ -27,16 +29,12 @@ object Relation {
     val R = fromFile(args(0))
     val S = R.copy()
     val T = R.copy()
-    val triangles = BenchmarkUtil.time {
-      R.firstCol.intersect(T.firstCol).flatMap(a => {
-        R.firstCol.getNextCol(a).intersect(S.firstCol).flatMap(b => {
-          S.firstCol.getNextCol(b).intersect(T.firstCol.getNextCol(a)).map(c => {
-            (a, b, c)
-          })
-        })
-      })
-    }
-    println(s"""Counted ${triangles.size} triangles""")
+    val triangles = BenchmarkUtil.time { R.firstCol.intersect(T.firstCol).map(a => {
+      R.firstCol.getNextCol(a).intersect(S.firstCol).map(b => {
+        S.firstCol.getNextCol(b).intersect(T.firstCol.getNextCol(a)).size
+      }).sum
+    }).sum }
+    println(s"""Counted ${triangles} triangles""")
   }
 
   def fromArrays(arr:Array[Array[Int]]): Relation = {
@@ -57,7 +55,7 @@ case class Relation(relation:Array[Array[Int]]) {
   }
 }
 
-class ColumnNotFoundError extends Exception
+class ColumnNotFoundError(value:Int) extends Exception("Did not find value " + value)
 
 object Column {
   /**
@@ -152,7 +150,7 @@ object Column {
   }
 }
 
-class Column(val col:Array[Int], val begin:Int, val end:Int, val nextCol:Option[Column]) extends Iterable[Int] {
+class Column(val col:Array[Int], val begin:Int, val end:Int, val nextCol:Option[Column]) extends Serializable with Iterable[Int] {
 
   def intersect(other: Column): Column = {
     Column.intersect(this, other)
@@ -171,10 +169,12 @@ class Column(val col:Array[Int], val begin:Int, val end:Int, val nextCol:Option[
   }
   def getNextCol(v:Int): Column = {
     val beginForV = lowerBound(col, begin, end, v)
-    assert(beginForV >= 0)
+    if (beginForV < 0) {
+      throw new ColumnNotFoundError(v)
+    }
     val endForV = beginForV + (beginForV until end).toStream.takeWhile(col(_) == v).size
     if (nextCol.isEmpty) {
-      throw new ColumnNotFoundError
+      throw new ColumnNotFoundError(v)
     } else {
       val nextColExistent = nextCol.get
       return new Column(nextColExistent.col, beginForV, endForV, nextColExistent.nextCol)
@@ -195,3 +195,4 @@ class Column(val col:Array[Int], val begin:Int, val end:Int, val nextCol:Option[
     }
   }
 }
+

@@ -23,7 +23,7 @@ object BarbellExample {
     val data:List[(Int, Int)] = edges.collect().map(e => (e.src, e.dst)).toList
 
     val bag1 = df.select("src").distinct.map(a => {
-      val count = data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).map(b => {
+      val count = data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).toList.map(b => {
         val c = data.filter(x_val => x_val._1 == b).unzip._2.toSet.intersect(data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet)
         c.size
       }).sum
@@ -32,7 +32,7 @@ object BarbellExample {
 
     // kind of redundant, but perhaps a more fair comparison
     val bag2 = df.select("src").distinct.map(a => {
-      val count = data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).map(b => {
+      val count = data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet.intersect(data.unzip._1.toSet).toList.map(b => {
         val c = data.filter(x_val => x_val._1 == b).unzip._2.toSet.intersect(data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.toSet)
         c.size
       }).sum
@@ -46,11 +46,6 @@ object BarbellExample {
     val bag2df = bmark.time { sqlContext.createDataFrame(bag2) }
     val bag2collected = bmark.time { bag2.collect }
     val bag2r2a = bmark.time { bag2collected.toMap}
-
-    bag1collected.foreach(println)
-    bag2collected.foreach(println)
-    println(bag1r2a)
-    println(bag2r2a)
 
     val topBag = df.select("src").intersect(bag1df.select("_1")).map(a => {
       data.filter(x_val => x_val._1 == a.getInt(0)).unzip._2.intersect(bag2collected.unzip._1).map(b_val => {
