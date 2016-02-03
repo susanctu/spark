@@ -6,9 +6,9 @@ import org.apache.spark.{SparkContext, SparkConf}
 /**
  * Created by sctu on 2/1/16.
  */
-object ColumnTriangleNPRRExample {
+object TrieTriangleNPRRExample {
   def  main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("ColumnTriangleNPRRExample")
+    val conf = new SparkConf().setAppName("TrieTriangleNPRRExample")
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
 
@@ -18,7 +18,7 @@ object ColumnTriangleNPRRExample {
     })
     val df = sqlContext.createDataFrame(edges)
     df.cache()
-    val broadcastR = sc.broadcast(ColumnRelation.fromFile(args(0)))
+    val broadcastR = sc.broadcast(TrieRelation.fromFile(args(0)))
 
     val result = df.select("src").distinct.map(wrappedA => {
       val a = wrappedA.getInt(0)
